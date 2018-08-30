@@ -3,7 +3,7 @@ import os
 from django.conf import settings
 from django.contrib import messages
 from django.core import exceptions
-from django.db.models import Count
+from django.db.models import Count, Prefetch
 from django.http import HttpResponseRedirect
 from django.shortcuts import HttpResponse, get_object_or_404
 from django.template.loader import render_to_string
@@ -113,7 +113,13 @@ class RangeProductListView(BulkEditMixin, ListView):
 
     def get_queryset(self):
         products = self.get_range().all_products()
-        return products.order_by('rangeproduct__display_order')
+        return (
+            products
+            .prefetch_related(
+                'parent', queryset=Product.objects.only(
+                    'pk', 'is_discountable'))
+            .order_by('rangeproduct__display_order')
+        )
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
